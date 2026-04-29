@@ -5,7 +5,7 @@
 
 const CONFIG = {
   // 👇 REPLACE WITH YOUR FREE TMDB API KEY
-  TMDB_API_KEY: 'YOUR_TMDB_API_KEY_HERE',
+  TMDB_API_KEY: 'c51ff18e218d282e55c31752abfe5b47',
   TMDB_BASE_URL: 'https://api.themoviedb.org/3',
   TMDB_IMAGE_BASE: 'https://image.tmdb.org/t/p/',
   TMDB_BACKDROP_BASE: 'https://image.tmdb.org/t/p/original',
