@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CineVerse - Watch Movies, TV Shows & Live TV Online Free in HD" />
+  <meta name="keywords" content="watch movies online, live tv, tv shows, streaming, free movies" />
+  <meta name="robots" content="index, follow" />
+  <title>CineVerse - Watch Movies & Live TV Online Free</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+</head>
+<body>
+
+<!-- PARTICLE CANVAS BACKGROUND -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- LOADING SCREEN -->
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-logo">CINE<span>VERSE</span></div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p>Loading Universe...</p>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="nav-logo">
+    <a href="index.html">CINE<span>VERSE</span></a>
+  </div>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="active"><i class="fas fa-home"></i> Home</a>
+    <a href="movies.html"><i class="fas fa-film"></i> Movies</a>
+    <a href="tv.html"><i class="fas fa-tv"></i> TV Shows</a>
+    <a href="tv.html#live"><i class="fas fa-circle live-dot"></i> Live TV</a>
+    <a href="#"><i class="fas fa-star"></i> Top Rated</a>
+  </div>
+  <div class="nav-right">
+    <div class="search-box">
+      <input type="text" id="navSearch" placeholder="Search movies, shows..." />
+      <button onclick="performSearch()"><i class="fas fa-search"></i></button>
+    </div>
+    <a href="login.html" class="btn-login"><i class="fas fa-user"></i> Sign In</a>
+    <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
+  </div>
+</nav>
+
+<!-- HERO SECTION 3D -->
+<section class="hero" id="hero">
+  <div class="hero-3d-scene">
+    <div class="hero-content">
+      <div class="hero-badge"><i class="fas fa-fire"></i> TRENDING NOW</div>
+      <h1 class="hero-title" id="heroTitle">Loading...</h1>
+      <p class="hero-desc" id="heroDesc">Loading description...</p>
+      <div class="hero-meta">
+        <span class="hero-rating"><i class="fas fa-star"></i> <span id="heroRating">0.0</span></span>
+        <span class="hero-year" id="heroYear">2024</span>
+        <span class="hero-genre" id="heroGenre">Action</span>
+        <span class="hero-quality">HD</span>
+      </div>
+      <div class="hero-btns">
+        <button class="btn-play" id="heroPlay" onclick="playHero()">
+          <i class="fas fa-play"></i> Watch Now
+        </button>
+        <button class="btn-trailer" id="heroTrailer" onclick="watchTrailer()">
+          <i class="fas fa-film"></i> Trailer
+        </button>
+        <button class="btn-add" onclick="addToWatchlist()">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+    <div class="hero-image-3d">
+      <div class="card-3d" id="heroCard">
+        <img id="heroPoster" src="" alt="Hero Movie" />
+        <div class="card-glow"></div>
+        <div class="card-shine"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-indicators" id="heroIndicators"></div>
+  <button class="hero-arrow hero-prev" onclick="changeHero(-1)"><i class="fas fa-chevron-left"></i></button>
+  <button class="hero-arrow hero-next" onclick="changeHero(1)"><i class="fas fa-chevron-right"></i></button>
+</section>
+
+<!-- LIVE TV TICKER -->
+<div class="live-ticker">
+  <div class="ticker-label"><i class="fas fa-circle"></i> LIVE</div>
+  <div class="ticker-content">
+    <div class="ticker-inner" id="tickerContent">
+      Loading live channels...
+    </div>
+  </div>
+</div>
+
+<!-- TRENDING MOVIES -->
+<section class="section" id="trending">
+  <div class="section-header">
+    <h2><span class="gradient-text">🔥 Trending</span> Movies</h2>
+    <a href="movies.html" class="see-all">See All <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="swiper trendingSwiper">
+    <div class="swiper-wrapper" id="trendingMovies"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+  </div>
+</section>
+
+<!-- LIVE TV CHANNELS -->
+<section class="section live-tv-section" id="livetv">
+  <div class="section-header">
+    <h2><span class="gradient-text">📺 Live TV</span> Channels</h2>
+    <a href="tv.html#live" class="see-all">All Channels <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="live-channels-grid" id="liveChannels"></div>
+</section>
+
+<!-- TOP RATED MOVIES -->
+<section class="section">
+  <div class="section-header">
+    <h2><span class="gradient-text">⭐ Top Rated</span> All Time</h2>
+    <a href="movies.html?filter=top_rated" class="see-all">See All <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="swiper topRatedSwiper">
+    <div class="swiper-wrapper" id="topRatedMovies"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+  </div>
+</section>
+
+<!-- POPULAR TV SHOWS -->
+<section class="section">
+  <div class="section-header">
+    <h2><span class="gradient-text">📺 Popular</span> TV Shows</h2>
+    <a href="tv.html" class="see-all">See All <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="swiper tvShowsSwiper">
+    <div class="swiper-wrapper" id="popularTV"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+  </div>
+</section>
+
+<!-- CATEGORIES SECTION -->
+<section class="section categories-section">
+  <div class="section-header">
+    <h2><span class="gradient-text">🎭 Browse</span> by Genre</h2>
+  </div>
+  <div class="categories-grid" id="categoriesGrid"></div>
+</section>
+
+<!-- UPCOMING MOVIES -->
+<section class="section">
+  <div class="section-header">
+    <h2><span class="gradient-text">🚀 Coming</span> Soon</h2>
+    <a href="movies.html?filter=upcoming" class="see-all">See All <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="swiper upcomingSwiper">
+    <div class="swiper-wrapper" id="upcomingMovies"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+  </div>
+</section>
+
+<!-- FEATURE BANNER -->
+<section class="feature-banner">
+  <div class="feature-3d-box">
+    <div class="feature-content">
+      <h2>Experience Cinema in <span>4K Ultra HD</span></h2>
+      <p>Stream thousands of movies and TV shows in stunning 4K quality with Dolby Atmos sound</p>
+      <div class="feature-stats">
+        <div class="stat"><h3>10K+</h3><p>Movies</p></div>
+        <div class="stat"><h3>500+</h3><p>TV Shows</p></div>
+        <div class="stat"><h3>100+</h3><p>Live Channels</p></div>
+        <div class="stat"><h3>4K</h3><p>Ultra HD</p></div>
+      </div>
+      <a href="login.html" class="btn-glow">Start Watching Free <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="feature-decoration">
+      <div class="cube">
+        <div class="cube-face front"></div>
+        <div class="cube-face back"></div>
+        <div class="cube-face left"></div>
+        <div class="cube-face right"></div>
+        <div class="cube-face top"></div>
+        <div class="cube-face bottom"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VIDEO MODAL (Trailer) -->
+<div class="modal" id="trailerModal">
+  <div class="modal-overlay" onclick="closeModal()"></div>
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-video">
+      <iframe id="trailerFrame" src="" frameborder="0" allowfullscreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+      </iframe>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div class="toast" id="toast"></div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="footer-logo">CINE<span>VERSE</span></div>
+      <p>Your ultimate destination for movies, TV shows, and live television streaming.</p>
+      <div class="social-links">
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-instagram"></i></a>
+        <a href="#"><i class="fab fa-youtube"></i></a>
+        <a href="#"><i class="fab fa-facebook"></i></a>
+      </div>
+    </div>
+    <div class="footer-links">
+      <h4>Movies</h4>
+      <a href="movies.html">Action</a>
+      <a href="movies.html">Comedy</a>
+      <a href="movies.html">Drama</a>
+      <a href="movies.html">Horror</a>
+      <a href="movies.html">Sci-Fi</a>
+    </div>
+    <div class="footer-links">
+      <h4>TV Shows</h4>
+      <a href="tv.html">Popular</a>
+      <a href="tv.html">Top Rated</a>
+      <a href="tv.html">On The Air</a>
+      <a href="tv.html#live">Live TV</a>
+    </div>
+    <div class="footer-links">
+      <h4>Support</h4>
+      <a href="#">FAQ</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Contact Us</a>
+      <a href="#">DMCA</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2024 CineVerse. All rights reserved. Movie data provided by <a href="https://www.themoviedb.org" target="_blank">TMDB</a></p>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
