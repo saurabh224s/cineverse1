@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CineVerse 3D</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    /* ─── RESET & BASE ─────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --gold:   #f5c518;
+      --red:    #e50914;
+      --dark:   #0a0a0f;
+      --dark2:  #12121a;
+      --glass:  rgba(255,255,255,0.05);
+      --glass-b:rgba(255,255,255,0.10);
+      --text:   #e8e8f0;
+      --sub:    #8888aa;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--dark2); }
+    ::-webkit-scrollbar-thumb { background: var(--red); border-radius: 3px; }
+
+    /* ─── THREE.JS CANVAS ──────────────────────────── */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ─── NAVIGATION ───────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(10,10,15,0.75);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(245,197,24,0.15);
+      transition: all .3s;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--gold), var(--red));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none;
+      cursor: pointer;
+    }
+    .logo span { color: #fff; -webkit-text-fill-color: #fff; }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--sub);
+      font-size: .95rem;
+      letter-spacing: 1px;
+      transition: color .3s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px; left: 0;
+      width: 0; height: 2px;
+      background: var(--gold);
+      transition: width .3s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-links a:hover::after { width: 100%; }
+
+    .nav-actions { display: flex; gap: 12px; }
+
+    .btn {
+      padding: 9px 22px;
+      border-radius: 30px;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .3s;
+      border: none;
+      letter-spacing: .5px;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--gold);
+      color: var(--gold);
+    }
+    .btn-outline:hover {
+      background: var(--gold);
+      color: #000;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(245,197,24,.4);
+    }
+    .btn-red {
+      background: linear-gradient(135deg, var(--red), #b00610);
+      color: #fff;
+    }
+    .btn-red:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(229,9,20,.5);
+    }
+
+    /* ─── HERO ─────────────────────────────────────── */
+    #hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 48px 80px;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 70% at 70% 50%,
+          rgba(229,9,20,.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 20% 80%,
+          rgba(245,197,24,.08) 0%, transparent 60%);
+    }
+
+    .hero-content { max-width: 620px; position: relative; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border-radius: 30px;
+      border: 1px solid rgba(245,197,24,.4);
+      background: rgba(245,197,24,.08);
+      font-size: .8rem;
+      color: var(--gold);
+      letter-spacing: 2px;
+      margin-bottom: 24px;
+      animation: fadeDown .8s ease both;
+    }
+    .badge-dot {
+      width: 8px; height: 8px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.4); opacity: .7; }
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      animation: fadeUp .9s .1s ease both;
+    }
+    .hero-title .accent {
+      background: linear-gradient(135deg, var(--gold), #ff6b35);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--sub);
+      line-height: 1.7;
+      margin-bottom: 36px;
+      animation: fadeUp .9s .2s ease both;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      animation: fadeUp .9s .3s ease both;
+    }
+    .btn-hero {
+      padding: 14px 32px;
+      font-size: 1rem;
+      border-radius: 50px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 56px;
+      animation: fadeUp .9s .4s ease both;
+    }
+    .stat-item { text-align: center; }
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gold);
+    }
+    .stat-label { font-size: .8rem; color: var(--sub); letter-spacing: 1px; }
+
+    /* floating movie poster */
+    .hero-visual {
+      position: absolute;
+      right: 48px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 20px;
+      animation: floatIn 1s .5s ease both;
+    }
+    @keyframes floatIn {
+      from { opacity: 0; transform: translateY(-50%) translateX(60px); }
+      to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+    }
+
+    .poster-stack {
+      position: relative;
+      width: 200px;
+      height: 300px;
+      perspective: 800px;
+    }
+    .poster-card {
+      position: absolute;
+      width: 180px;
+      height: 270px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid rgba(255,255,255,.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+      animation: floatCard 4s ease-in-out infinite;
+      cursor: pointer;
+      transition: transform .3s;
+      overflow: hidden;
+    }
+    .poster-card:hover { transform: scale(1.05) rotateY(-10deg) !important; }
+
+    .poster-card:nth-child(1) {
+      top: 0; left: 0;
+      transform: rotate(-8deg) translateZ(0);
+      animation-delay: 0s;
+      background: linear-gradient(135deg, #1a0a2e, #2d1b69);
+    }
+    .poster-card:nth-child(2) {
+      top: 15px; left: 20px;
+      transform: rotate(3deg) translateZ(20px);
+      animation-delay: .5s;
+      background: linear-gradient(135deg, #2e0a0a, #69281b);
+    }
+    .poster-card:nth-child(3) {
+      top: 5px; left: 10px;
+      transform: rotate(-2deg) translateZ(40px);
+      animation-delay: 1s;
+      background: linear-gradient(135deg, #0a1a2e, #1b3369);
+    }
+
+    .poster-emoji { font-size: 4rem; }
+    .poster-title {
+      position: absolute;
+      bottom: 16px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: .75rem;
+      font-weight: 700;
+      color: rgba(255,255,255,.8);
+      letter-spacing: 1px;
+    }
+    .poster-rating {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: var(--gold);
+      color: #000;
+      font-size: .7rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    @keyframes floatCard {
+      0%,100% { transform: rotate(-8deg) translateY(0); }
+      50%      { transform: rotate(-8deg) translateY(-12px); }
+    }
+
+    /* ─── SECTION BASE ─────────────────────────────── */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 80px 48px;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .section-tag {
+      display: inline-block;
+      padding: 4px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--red);
+      color: var(--red);
+      font-size: .75rem;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+    }
+    .section-title span { color: var(--gold); }
+    .section-sub { color: var(--sub); margin-top: 10px; font-size: .95rem; }
+
+    /* ─── MOVIE GRID ───────────────────────────────── */
+    #movies { background: rgba(255,255,255,.01); }
+
+    .movies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 28px;
+    }
+
+    /* 3D Card Flip */
+    .movie-card-wrap {
+      perspective: 1000px;
+      height: 340px;
+      cursor: pointer;
+    }
+    .movie-card-inner {
+      position: relative;
+      width: 100%; height: 100%;
+      transform-style: preserve-3d;
+      transition: transform .7s cubic-bezier(.4,0,.2,1);
+    }
+    .movie-card-wrap:hover .movie-card-inner { transform: rotateY(180deg); }
+
+    .card-front, .card-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      backface-visibility: hidden;
+      overflow: hidden;
+    }
+
+    .card-front {
+      background: var(--dark2);
+      border: 1px solid rgba(255,255,255,.06);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 40px rgba(0,0,0,.5);
+      transition: box-shadow .3s;
+    }
+    .movie-card-wrap:hover .card-front {
+      box-shadow: 0 20px 60px rgba(229,9,20,.3);
+    }
+
+    .card-poster {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-poster::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: inherit;
+      filter: blur(0);
+      transition: filter .3s;
+    }
+
+    .card-genre-badge {
+      position: absolute;
+      top: 12px; left: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .card-info {
+      padding: 16px;
+      background: linear-gradient(to top, var(--dark2), transparent);
+    }
+    .card-info h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .8rem;
+      color: var(--sub);
+    }
+    .star-rating { color: var(--gold); }
+
+    .card-back {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid rgba(245,197,24,.2);
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 20px;
+      gap: 14px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(245,197,24,.2);
+    }
+    .back-emoji { font-size: 3.5rem; }
+    .back-title { font-size: 1.1rem; font-weight: 800; color: var(--gold); }
+    .back-desc { font-size: .82rem; color: var(--sub); line-height: 1.6; }
+    .btn-watch {
+      padding: 10px 28px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, var(--red), #b00610);
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: .9rem;
+      transition: all .3s;
+      width: 100%;
+    }
+    .btn-watch:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(229,9,20,.5);
+    }
+    .back-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .tag {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: .7rem;
+      border: 1px solid rgba(255,255,255,.15);
+      color: var(--sub);
+    }
+
+    /* ─── LIVE SHOWS ───────────────────────────────── */
+    #live {
+      background:
+        radial-gradient(ellipse at 50% 0%,
+          rgba(229,9,20,.08) 0%, transparent 60%);
+    }
+
+    .live-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .live-card {
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: all .4s cubic-bezier(.4,0,.2,1);
+      transform-style: preserve-3d;
+      position: relative;
+    }
+    .live-card:hover {
+      transform: translateY(-10px) rotateX(3deg);
+      border-color: var(--red);
+      box-shadow: 0 30px 60px rgba(229,9,20,.25),
+                  0 0 0 1px rgba(229,9,20,.3);
+    }
+
+    .live-header {
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,.03);
+    }
+    .live-icon {
+      width: 60px; height: 60px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      flex-shrink: 0;
+    }
+    .live-info h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+    .live-info p { font-size: .82rem; color: var(--sub); }
+
+    .live-badge {
+      position: absolute;
+      top: 16px; right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .live-badge.live-now {
+      background: rgba(229,9,20,.2);
+      border: 1px solid var(--red);
+      color: var(--red);
+    }
+    .live-badge.upcoming {
+      background: rgba(245,197,24,.15);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .live-now .live-dot { background: var(--red); animation: pulse 1.2s infinite; }
+    .upcoming .live-dot { background: var(--gold); }
+
+    .live-body { padding: 0 24px 24px; }
+    .live-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: .82rem;
+      color: var(--sub);
+      margin-bottom: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,.05);
+    }
+    .meta-item { display: flex; align-items: center; gap: 5px; }
+
+    .live-progress {
+      height: 4px;
+      background: rgba(255,255,255,.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      border-radius: 2px;
+      transition: width .5s;
+    }
+
+    .btn-join {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .btn-join.primary {
+      background: linear-gradient(135deg, var(--red), #b00610);
+      color: #fff;
+    }
+    .btn-join.secondary {
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .btn-join:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(229,9,20,.4);
+    }
+
+    /* ─── CATEGORIES ───────────────────────────────── */
+    #categories {
+      background: rgba(255,255,255,.015);
+    }
+
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+    }
+
+    .cat-card {
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 16px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .35s cubic-bezier(.4,0,.2,1);
+      transform-style: preserve-3d;
+    }
+    .cat-card:hover {
+      transform: translateY(-8px) rotateX(5deg) scale(1.03);
+      border-color: rgba(255,255,255,.2);
+      box-shadow: 0 20px 50px rgba(0,0,0,.4);
+    }
+    .cat-emoji { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+    .cat-name { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+    .cat-count { font-size: .8rem; color: var(--sub); }
+
+    /* ─── FEATURED ─────────────────────────────────── */
+    #featured {
+      background:
+        linear-gradient(135deg,
+          rgba(245,197,24,.04) 0%,
+          rgba(229,9,20,.04) 100%);
+    }
+
+    .featured-banner {
+      background: linear-gradient(135deg, #1a0a2e 0%, #0d1b4a 50%, #1a0a1a 100%);
+      border: 1px solid rgba(245,197,24,.2);
+      border-radius: 24px;
+      padding: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+      overflow: hidden;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform .4s;
+    }
+    .featured-banner:hover { transform: rotateX(2deg) scale(1.01); }
+
+    .featured-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%; right: -10%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle,
+        rgba(245,197,24,.12) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .featured-content { flex: 1; }
+    .featured-tag {
+      display: inline-block;
+      padding: 5px 16px;
+      background: var(--gold);
+      color: #000;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+    .featured-title {
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 900;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .featured-desc {
+      color: var(--sub);
+      font-size: .95rem;
+      line-height: 1.7;
+      max-width: 500px;
+      margin-bottom: 28px;
+    }
+    .featured-actions { display: flex; gap: 14px; }
+
+    .featured-visual {
+      flex-shrink: 0;
+      display: flex;
+      gap: 16px;
+    }
+    .featured-poster {
+      width: 140px; height: 210px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,.6);
+      border: 1px solid rgba(255,255,255,.1);
+      animation: floatPoster 3s ease-in-out infinite;
+    }
+    .featured-poster:nth-child(2) { animation-delay: .5s; margin-top: 24px; }
+    .featured-poster:nth-child(3) { animation-delay: 1s; }
+
+    @keyframes floatPoster {
+      0%,100% { transform: translateY(0) rotate(-2deg); }
+      50%      { transform: translateY(-10px) rotate(2deg); }
+    }
+
+    /* ─── SEARCH BAR ───────────────────────────────── */
+    .search-wrap {
+      max-width: 600px;
+      margin: 0 auto 60px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 16px 60px 16px 24px;
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 50px;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: all .3s;
+      backdrop-filter: blur(10px);
+    }
+    .search-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245,197,24,.15),
+                  0 10px 40px rgba(0,0,0,.3);
+    }
+    .search-input::placeholder { color: var(--sub); }
+    .search-btn {
+      position: absolute;
+      right: 6px; top: 50%;
+      transform: translateY(-50%);
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), #b00610);
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .search-btn:hover {
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 5px 20px rgba(229,9,20,.5);
+    }
+
+    /* ─── FOOTER ───────────────────────────────────── */
+    footer {
+      position: relative;
+      z-index: 1;
+      background: rgba(5,5,10,.9);
+      border-top: 1px solid rgba(255,255,255,.05);
+      padding: 60px 48px 30px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 50px;
+    }
+
+    .footer-brand .logo { font-size: 1.5rem; margin-bottom: 14px; display: block; }
+    .footer-brand p { color: var(--sub); font-size: .9rem; line-height: 1.7; }
+
+    .footer-col h4 {
+      font-size: .9rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--gold);
+      margin-bottom: 18px;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col a {
+      text-decoration: none;
+      color: var(--sub);
+      font-size: .88rem;
+      transition: color .3s;
+    }
+    .footer-col a:hover { color: var(--text); }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,.05);
+      font-size: .82rem;
+      color: var(--sub);
+    }
+    .social-links { display: flex; gap: 12px; }
+    .social-btn {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all .3s;
+      text-decoration: none;
+    }
+    .social-btn:hover {
+      background: var(--red);
+      border-color: var(--red);
+      transform: translateY(-3px);
+    }
+
+    /* ─── MODAL ────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.8);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: linear-gradient(135deg, #12121a, #1a1a2e);
+      border: 1px solid rgba(245,197,24,.2);
+      border-radius: 24px;
+      padding: 48px;
+      max-width: 480px;
+      width: 90%;
+      transform: scale(.9) translateY(20px);
+      transition: all .3s;
+      text-align: center;
+    }
+    .modal-overlay.open .modal {
+      transform: scale(1) translateY(0);
+    }
+    .modal-emoji { font-size: 4rem; margin-bottom: 16px; }
+    .modal h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 12px; }
+    .modal p { color: var(--sub); margin-bottom: 28px; line-height: 1.6; }
+    .modal-buttons { display: flex; gap: 12px; }
+    .modal-buttons .btn { flex: 1; padding: 14px; font-size: 1rem; border-radius: 14px; }
+    .close-modal {
+      position: absolute;
+      top: 16px; right: 20px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--sub);
+      background: none; border: none;
+      transition: color .3s;
+    }
+    .close-modal:hover { color: var(--text); }
+
+    /* ─── ANIMATIONS ───────────────────────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all .8s cubic-bezier(.4,0,.2,1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─── RESPONSIVE ───────────────────────────────── */
+    @media (max-width: 900px) {
+      nav { padding: 14px 24px; }
+      .nav-links { display: none; }
+      #hero { padding: 100px 24px 60px; }
+      .hero-visual { display: none; }
+      section { padding: 60px 24px; }
+      .featured-banner { flex-direction: column; padding: 36px 24px; }
+      .featured-visual { display: none; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      footer { padding: 40px 24px 24px; }
+    }
+    @media (max-width: 600px) {
+      .movies-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr; }
+      .hero-stats { gap: 20px; }
+      .modal { padding: 32px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ BACKGROUND ═══════════════════════════════════ -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ═══ MODAL ════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal">
+  <div class="modal" style="position:relative">
+    <button class="close-modal" onclick="closeModal()">✕</button>
+    <div class="modal-emoji" id="modal-emoji">🎬</div>
+    <h2 id="modal-title">Ready to Watch?</h2>
+    <p id="modal-desc">Start streaming this amazing content now.</p>
+    <div class="modal-buttons">
+      <button class="btn btn-outline" onclick="closeModal()">Later</button>
+      <button class="btn btn-red" onclick="closeModal()">▶ Watch Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ NAV ═══════════════════════════════════════════ -->
+<nav>
+  <div class="logo">CINE<span>VERSE</span></div>
+  <ul class="nav-links">
+    <li><a href="#movies">Movies</a></li>
+    <li><a href="#live">Live Shows</a></li>
+    <li><a href="#categories">Categories</a></li>
+    <li><a href="#featured">Featured</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="btn btn-outline">Sign In</button>
+    <button class="btn btn-red">Start Free</button>
+  </div>
+</nav>
+
+<!-- ═══ HERO ══════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      NOW STREAMING LIVE
+    </div>
+    <h1 class="hero-title">
+      Your <span class="accent">Ultimate</span><br/>
+      3D Cinema<br/>Experience
+    </h1>
+    <p class="hero-sub">
+      Stream thousands of movies and join live shows in stunning 
+      3D — anytime, anywhere. The future of entertainment is here.
+    </p>
+    <div class="hero-buttons">
+      <button class="btn btn-red btn-hero" onclick="openModal('🚀','Start Your Journey','Unlock unlimited movies, live shows and exclusive content with a free 7-day trial.')">
+        ▶ Start Watching
+      </button>
+      <button class="btn btn-outline btn-hero" onclick="openModal('📋','Browse All Content','Explore our full library of 10,000+ movies and 500+ live shows.')">
+        Browse Library
+      </button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">10K+</div>
+        <div class="stat-label">MOVIES</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">500+</div>
+        <div class="stat-label">LIVE SHOWS</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">4K</div>
+        <div class="stat-label">ULTRA HD</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">50M+</div>
+        <div class="stat-label">FANS</div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="poster-stack">
+      <div class="poster-card" onclick="openModal('🚀','Galactic Odyssey','An epic space adventure that spans galaxies and generations. Rated 9.2/10')">
+        <span class="poster-emoji">🚀</span>
+        <span class="poster-rating">9.2</span>
+        <span class="poster-title">GALACTIC ODYSSEY</span>
+      </div>
+      <div class="poster-card" onclick="openModal('🔥','Inferno Rising','A thrilling action masterpiece with jaw-dropping visual effects. Rated 8.8/10')">
+        <span class="poster-emoji">🔥</span>
+        <span class="poster-rating">8.8</span>
+        <span class="poster-title">INFERNO RISING</span>
+      </div>
+      <div class="poster-card" onclick="openModal('🌊','Deep Blue','An underwater mystery that will keep you on the edge of your seat. Rated 8.5/10')">
+        <span class="poster-emoji">🌊</span>
+        <span class="poster-rating">8.5</span>
+        <span class="poster-title">DEEP BLUE</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SEARCH ════════════════════════════════════════ -->
+<section id="search" style="padding: 0 48px; z-index:1; position:relative">
+  <div class="search-wrap reveal">
+    <input class="search-input" type="text" placeholder="🔍  Search movies, shows, genres..."/>
+    <button class="search-btn">⌕</button>
+  </div>
+</section>
+
+<!-- ═══ MOVIES ════════════════════════════════════════ -->
+<section id="movies">
+  <div class="section-header reveal">
+    <div class="section-tag">TRENDING NOW</div>
+    <h2 class="section-title">Top <span>Movies</span> This Week</h2>
+    <p class="section-sub">Hover any card to see details — click to watch!</p>
+  </div>
+
+  <div class="movies-grid reveal">
+    <!-- Card 1 -->
+    <div class="movie-card-wrap">
+      <div class="movie-card-inner">
+        <div class="card-front">
+          <div class="card-poster" style="background:linear-gradient(135deg,#1a0030,#4a0080)">
+            <span class="card-genre-badge" style="background:rgba(150,0,255,.4);color:#cc88ff">SCI-FI</span>
+            <span style="font-size:4.5rem">🚀</span>
+          </div>
+          <div class="card-info">
+            <h3>Galactic Odyssey</h3>
+            <div class="card-meta">
+              <span>2024 · 2h 28m</span>
+              <span class="star-rating">★ 9.2</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-back">
+          <span class="back-emoji">🚀</span>
+          <div class="back-title">Galactic Odyssey</div>
+          <p class="back-desc">A crew of astronauts ventures beyond the known universe to find humanity's new home.</p>
+          <div class="back-tags">
+            <span class="tag">Sci-Fi</span><span class="tag">Adventure</span><span class="tag">4K HDR</span>
+          </div>
+          <button class="btn-watch" onclick="openModal('🚀','Galactic Odyssey','A crew of astronauts ventures beyond the known universe to find humanity\'s new home. Rated 9.2/10')">
+            ▶ Watch Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="movie-card-wrap">
+      <div class="movie-card-inner">
+        <div class="card-front">
+          <div class="card-poster" style="background:linear-gradient(135deg,#300a00,#802000)">
+            <span class="card-genre-badge" style="background:rgba(255,80,0,.3);color:#ff9966">ACTION</span>
+            <span style="font-size:4.5rem">🔥</span>
+          </div>
+          <div class="card-info">
+            <h3>Inferno Rising</h3>
+            <div class="card-meta">
+              <span>2024 · 2h 05m</span>
+              <span class="star-rating">★ 8.8</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-back">
+          <span class="back-emoji">🔥</span>
+          <div class="back-title">Inferno Rising</div>
+          <p class="back-desc">An elite operative must stop a global catastrophe with only 12 hours on the clock.</p>
+          <div class="back-tags">
+            <span class="tag">Action</span><span class="tag">Thriller</span><span class="tag">Dolby</span>
+          </div>
+          <button class="btn-watch" onclick="openModal('🔥','Inferno Rising','An elite operative must stop a global catastrophe with only 12 hours on the clock.')">
+            ▶ Watch Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="movie-card-wrap">
+      <div class="movie-card-inner">
+        <div class="card-front">
+          <div class="card-poster" style="background:linear-gradient(135deg,#00152e,#003878)">
+            <span class="card-genre-badge" style="background:rgba(0,120,255,.3);color:#66aaff">MYSTERY</span>
+            <span style="font-size:4.5rem">🌊</span>
+          </div>
+          <div class="card-info">
+            <h3>Deep Blue Secret</h3>
+            <div class="card-meta">
+              <span>2024 · 1h 52m</span>
+              <span class="star-rating">★ 8.5</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-back">
+          <span class="back-emoji">🌊</span>
+          <div class="back-title">Deep Blue Secret</div>
+          <p class="back-desc">Deep in the ocean hides a secret that could change everything we know about life on Earth.</p>
+          <div class="back-tags">
+            <span class="tag">Mystery</span><span class="tag">Drama</span><span class="tag">4K</span>
+          </div>
+          <button class="btn-watch" onclick="openModal('🌊','Deep Blue Secret','Deep in the ocean hides a secret that could change everything we know about life on Earth.')">
+            ▶ Watch Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="movie-card-wrap">
+      <div class="movie-card-inner">
+        <div class="card-front">
+          <div class="card-poster" style="background:linear-gradient(135deg,#1a2800,#3a6000)">
+            <span class="card-genre-badge" style="background:rgba(60,160,0,.3);color:#88dd44">FANTASY</span>
+            <span style="font-size:4.5rem">🐉</span>
+          </div>
+          <div class="card-info">
+            <h3>Dragon's Throne</h3>
+            <div class="card-meta">
+              <span>2024 · 2h 44m</span>
+              <span class="star-rating">★ 9.0</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-back">
+          <span class="back-emoji">🐉</span>
+          <div class="back-title">Dragon's Throne</div>
+          <p class="back-desc">In a realm of dragons and magic, one warrior must unite the kingdoms before darkness wins.</p>
+          <div class="back-tags">
+            <span class="tag">Fantasy</span><span class="tag">Epic</span><span class="tag">4K HDR</span>
+          </div>
+          <button class="btn-watch" onclick="openModal('🐉','Dragon\'s Throne','In a realm of dragons and magic, one warrior must unite the kingdoms before darkness wins.')">
+            ▶ Watch Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="movie-card-wrap">
+      <div class="movie-card-inner">
+        <div class="card-front">
+          <div class="card-poster" style="background:linear-gradient(135deg,#28001a,#700040)">
+            <span class="card-genre-badge" style="background:rgba(255,0,120,.25);color:#ff66aa">HORROR</span>
+            <span style="font-size:4.5rem">👻</span>
+          </div>
+          <div class="card-info">
+            <h3>Phantom Hour</h3>
+            <div class="card-meta">
+              <span>2024 · 1h 38m</span>
+              <span class="star-rating">★ 8.1</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-back">
+          <span class="back-emoji">👻</span>
+          <div class="back-title">Phantom Hour</div>
+          <p class="back-desc">When the clock strikes midnight, the boundary between worlds dissolves. Are you ready?</p>
+          <div class="back-tags">
+            <span class="tag">Horror</span><span class="tag">Supernatural</span><span class="tag">Surround</span>
+          </div>
+          <button class="btn-watch" onclick="openModal('👻','Phantom Hour','When the clock strikes midnight, the boundary between worlds dissolves. Are you ready?')">
+            ▶ Watch Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 6 -->
+    <div class="movie-card-wrap">
+      <div class="movie-card-inner">
+        <div class="card-front">
+          <div class="card-poster" style="background:linear-gradient(135deg,#201500,#5a3a00)">
+            <span class="card-genre-badge" style="background:rgba(255,180,0,.25);color:#ffcc44">COMEDY</span>
+            <span style="font-size:4.5rem">😂</span>
+          </div>
+          <div class="card-info">
+            <h3>The Big Laugh</h3>
+            <div class="card-meta">
+              <span>2024 · 1h 45m</span>
+              <span class="star-rating">★ 8.3</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-back">
+          <span class="back-emoji">😂</span>
+          <div class="back-title">The Big Laugh</div>
+          <p class="back-desc">Five strangers compete in the world's most ridiculous game show. Nobody wins. Everybody laughs.</p>
+          <div class="back-tags">
+            <span class="tag">Comedy</span><span class="tag">Family</span><span class="tag">HD</span>
+          </div>
+          <button class="btn-watch" onclick="openModal('😂','The Big Laugh','Five strangers compete in the world\'s most ridiculous game show. Nobody wins. Everybody laughs.')">
+            ▶ Watch Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 7 -->
+    <div class="movie-card-wrap">
+      <div class="movie-card-inner">
+        <div class="card-front">
+          <div class="card-poster" style="background:linear-gradient(135deg,#0a1530,#102055)">
+            <span class="card-genre-badge" style="background:rgba(0,180,255,.25);color:#44ccff">CRIME</span>
+            <span style="font-size:4.5rem">🕵️</span>
+          </div>
+          <div class="card-info">
+            <h3>Shadow Detective</h3>
+            <div class="card-meta">
+              <span>2024 · 2h 12m</span>
+              <span class="star-rating">★ 8.9</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-back">
+          <span class="back-emoji">🕵️</span>
+          <div class="back-title">Shadow Detective</div>
+          <p class="back-desc">A rogue detective follows clues into the city's darkest corners to expose a deadly conspiracy.</p>
+          <div class="back-tags">
+            <span class="tag">Crime</span><span class="tag">Noir</span><span class="tag">4K</span>
+          </div>
+          <button class="btn-watch" onclick="openModal('🕵️','Shadow Detective','A rogue detective follows clues into the city\'s darkest corners to expose a deadly conspiracy.')">
+            ▶ Watch Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 8 -->
+    <div class="movie-card-wrap">
+      <div class="movie-card-inner">
+        <div class="card-front">
+          <div class="card-poster" style="background:linear-gradient(135deg,#150028,#3d006e)">
+            <span class="card-genre-badge" style="background:rgba(180,0,255,.25);color:#cc88ff">ROMANCE</span>
+            <span style="font-size:4.5rem">💜</span>
+          </div>
+          <div class="card-info">
+            <h3>Neon Hearts</h3>
+            <div class="card-meta">
+              <span>2024 · 1h 58m</span>
+              <span class="star-rating">★ 8.4</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-back">
+          <span class="back-emoji">💜</span>
+          <div class="back-title">Neon Hearts</div>
+          <p class="back-desc">In a neon-lit cyberpunk city, two strangers find love against impossible odds.</p>
+          <div class="back-tags">
+            <span class="tag">Romance</span><span class="tag">Cyberpunk</span><span class="tag">HDR</span>
+          </div>
+          <button class="btn-watch" onclick="openModal('💜','Neon Hearts','In a neon-lit cyberpunk city, two strangers find love against impossible odds.')">
+            ▶ Watch Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LIVE SHOWS ═════════════════════════════════════ -->
+<section id="live">
+  <div class="section-header reveal">
+    <div class="section-tag">● ON AIR</div>
+    <h2 class="section-title"><span>Live</span> Shows &amp; Events</h2>
+    <p class="section-sub">Join thousands of viewers watching right now</p>
+  </div>
+
+  <div class="live-grid reveal">
+    <!-- Show 1 -->
+    <div class="live-card">
+      <div class="live-badge live-now">
+        <span class="live-dot"></span> LIVE NOW
+      </div>
+      <div class="live-header">
+        <div class="live-icon" style="background:linear-gradient(135deg,#400,#800)">🎤</div>
+        <div class="live-info">
+          <h3>World Music Awards 2024</h3>
+          <p>Global Music Event · Main Stage</p>
+        </div>
+      </div>
+      <div class="live-body">
+        <div class="live-meta">
+          <span class="meta-item">👥 128,450 watching</span>
+          <span class="meta-item">⏱ 1h 24m left</span>
+        </div>
+        <div class="live-progress"><div class="progress-fill" style="width:62%"></div></div>
+        <button class="btn-join primary" onclick="openModal('🎤','World Music Awards 2024','You are joining 128,450 viewers live! Grab your virtual seat now.')">
+          Join Live Stream
+        </button>
+      </div>
+    </div>
+
+    <!-- Show 2 -->
+    <div class="live-card">
+      <div class="live-badge live-now">
+        <span class="live-dot"></span> LIVE NOW
+      </div>
+      <div class="live-header">
+        <div class="live-icon" style="background:linear-gradient(135deg,#004,#008)">🏆</div>
+        <div class="live-info">
+          <h3>Champions League Final</h3>
+          <p>Sports · UEFA · 4K Ultra HD</p>
+        </div>
+      </div>
+      <div class="live-body">
+        <div class="live-meta">
+          <span class="meta-item">👥 2.4M watching</span>
+          <span class="meta-item">⏱ 34m left</span>
+        </div>
+        <div class="live-progress"><div class="progress-fill" style="width:78%"></div></div>
+        <button class="btn-join primary" onclick="openModal('🏆','Champions League Final','Join 2.4 MILLION viewers for the biggest match of the year — LIVE in 4K!')">
+          Watch Live
+        </button>
+      </div>
+    </div>
+
+    <!-- Show 3 -->
+    <div class="live-card">
+      <div class="live-badge upcoming">
+        <span class="live-dot"></span> SOON
+      </div>
+      <div class="live-header">
+        <div class="live-icon" style="background:linear-gradient(135deg,#040,#080)">🎭</div>
+        <div class="live-info">
+          <h3>Broadway: Hamilton Live</h3>
+          <p>Theatre · Broadway · 8 PM EST</p>
+        </div>
+      </div>
+      <div class="live-body">
+        <div class="live-meta">
+          <span class="meta-item">🔔 89,200 reminded</span>
+          <span class="meta-item">⏳ Starts in 2h</span>
+        </div>
+        <div class="live-progress"><div class="progress-fill" style="width:0%"></div></div>
+        <button class="btn-join secondary" onclick="openModal('🎭','Hamilton Live','Set a reminder and be the first to join when Hamilton goes LIVE on Broadway tonight!')">
+          🔔 Set Reminder
+        </button>
+      </div>
+    </div>
+
+    <!-- Show 4 -->
+    <div class="live-card">
+      <div class="live-badge live-now">
+        <span class="live-dot"></span> LIVE NOW
+      </div>
+      <div class="live-header">
+        <div class="live-icon" style="background:linear-gradient(135deg,#440,#880)">🎮</div>
+        <div class="live-info">
+          <h3>World Gaming Championship</h3>
+          <p>eSports · Finals · Prize $5M</p>
+        </div>
+      </div>
+      <div class="live-body">
+        <div class="live-meta">
+          <span class="meta-item">👥 876,000 watching</span>
+          <span class="meta-item">⏱ 45m left</span>
+        </div>
+        <div class="live-progress"><div class="progress-fill" style="width:55%"></div></div>
+        <button class="btn-join primary" onclick="openModal('🎮','World Gaming Championship','The $5 Million grand final is happening RIGHT NOW. 876K viewers are watching live!')">
+          Join Livestream
+        </button>
+      </div>
+    </div>
+
+    <!-- Show 5 -->
+    <div class="live-card">
+      <div class="live-badge upcoming">
+        <span class="live-dot"></span> UPCOMING
+      </div>
+      <div class="live-header">
+        <div class="live-icon" style="background:linear-gradient(135deg,#404,#808)">🌟</div>
+        <div class="live-info">
+          <h3>Oscar Awards Night 2024</h3>
+          <p>Awards · Hollywood · Red Carpet</p>
+        </div>
+      </div>
+      <div class="live-body">
+        <div class="live-meta">
+          <span class="meta-item">🔔 445,000 reminded</span>
+          <span class="meta-item">⏳ Tomorrow 7 PM</span>
+        </div>
+        <div class="live-progress"><div class="progress-fill" style="width:0%"></div></div>
+        <button class="btn-join secondary" onclick="openModal('🌟','Oscar Awards Night 2024','The biggest night in Hollywood! Set your reminder and watch the full red carpet + ceremony.')">
+          🔔 Remind Me
+        </button>
+      </div>
+    </div>
+
+    <!-- Show 6 -->
+    <div class="live-card">
+      <div class="live-badge live-now">
+        <span class="live-dot"></span> LIVE NOW
+      </div>
+      <div class="live-header">
+        <div class="live-icon" style="background:linear-gradient(135deg,#044,#088)">🎙️</div>
+        <div class="live-info">
+          <h3>Late Night Comedy Hour</h3>
+          <p>Comedy · Talk Show · Ep. 247</p>
+        </div>
+      </div>
+      <div class="live-body">
+        <div class="live-meta">
+          <span class="meta-item">👥 234,700 watching</span>
+          <span class="meta-item">⏱ 18m left</span>
+        </div>
+        <div class="live-progress"><div class="progress-fill" style="width:88%"></div></div>
+        <button class="btn-join primary" onclick="openModal('🎙️','Late Night Comedy Hour','Catch the last 18 minutes of tonight\'s episode — it\'s HILARIOUS!')">
+          Tune In Now
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CATEGORIES ════════════════════════════════════ -->
+<section id="categories">
+  <div class="section-header reveal">
+    <div class="section-tag">EXPLORE</div>
+    <h2 class="section-title">Browse by <span>Genre</span></h2>
+    <p class="section-sub">Find exactly what you're in the mood for</p>
+  </div>
+
+  <div class="cat-grid reveal">
+    <div class="cat-card" onclick="openModal('🚀','Sci-Fi Collection','200+ mind-bending science fiction films from around the universe.')">
+      <span class="cat-emoji">🚀</span>
+      <div class="cat-name">Sci-Fi</div>
+      <div class="cat-count">200+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('🔥','Action Collection','500+ explosive action movies — fights, chases, and epic showdowns.')">
+      <span class="cat-emoji">🔥</span>
+      <div class="cat-name">Action</div>
+      <div class="cat-count">500+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('😱','Horror Collection','350+ terrifying films — if you dare to watch alone in the dark!')">
+      <span class="cat-emoji">😱</span>
+      <div class="cat-name">Horror</div>
+      <div class="cat-count">350+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('😂','Comedy Collection','400+ hilarious films guaranteed to make you laugh out loud.')">
+      <span class="cat-emoji">😂</span>
+      <div class="cat-name">Comedy</div>
+      <div class="cat-count">400+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('💕','Romance Collection','300+ romantic films from sweet love stories to passionate dramas.')">
+      <span class="cat-emoji">💕</span>
+      <div class="cat-name">Romance</div>
+      <div class="cat-count">300+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('🐉','Fantasy Collection','180+ magical worlds, epic quests and legendary battles.')">
+      <span class="cat-emoji">🐉</span>
+      <div class="cat-name">Fantasy</div>
+      <div class="cat-count">180+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('🎭','Drama Collection','600+ powerful dramatic stories that will move your soul.')">
+      <span class="cat-emoji">🎭</span>
+      <div class="cat-name">Drama</div>
+      <div class="cat-count">600+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('🧩','Thriller Collection','280+ suspenseful thrillers that will keep you guessing.')">
+      <span class="cat-emoji">🧩</span>
+      <div class="cat-name">Thriller</div>
+      <div class="cat-count">280+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('🎬','Documentary Collection','450+ real stories that will change the way you see the world.')">
+      <span class="cat-emoji">🎬</span>
+      <div class="cat-name">Documentary</div>
+      <div class="cat-count">450+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('🏆','Sports Collection','Every major sports event, championship and behind-the-scenes documentary.')">
+      <span class="cat-emoji">🏆</span>
+      <div class="cat-name">Sports</div>
+      <div class="cat-count">320+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('🎵','Music Collection','Concerts, music docs, and live performances from the world\'s biggest artists.')">
+      <span class="cat-emoji">🎵</span>
+      <div class="cat-name">Music</div>
+      <div class="cat-count">150+ titles</div>
+    </div>
+    <div class="cat-card" onclick="openModal('👶','Family Collection','Fun, safe and joyful content for the whole family to enjoy together.')">
+      <span class="cat-emoji">👶</span>
+      <div class="cat-name">Family</div>
+      <div class="cat-count">240+ titles</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURED ══════════════════════════════════════ -->
+<section id="featured">
+  <div class="section-header reveal">
+    <div class="section-tag">EDITOR'S PICK</div>
+    <h2 class="section-title">This Week's <span>Featured</span></h2>
+  </div>
+
+  <div class="featured-banner reveal">
+    <div class="featured-content">
+      <div class="featured-tag">⚡ EXCLUSIVE PREMIERE</div>
+      <h2 class="featured-title">
+        The Last<br/>Starkeeper
+      </h2>
+      <p class="featured-desc">
+        In the dying light of a distant star, one guardian must make the 
+        ultimate sacrifice to save a universe that has already forgotten her name. 
+        An unmissable cinematic event — now streaming exclusively on CineVerse.
+      </p>
+      <div class="featured-actions">
+        <button class="btn btn-red btn-hero" onclick="openModal('⭐','The Last Starkeeper','Now streaming exclusively! This award-winning space epic is available only on CineVerse. Watch in 4K HDR with Dolby Atmos sound.')">
+          ▶ Watch Exclusive
+        </button>
+        <button class="btn btn-outline btn-hero" onclick="openModal('🎞️','Movie Trailer','Watch the stunning official trailer for The Last Starkeeper — Winner of 5 Academy Awards.')">
+          🎞 Watch Trailer
+        </button>
+      </div>
+    </div>
+    <div class="featured-visual">
+      <div class="featured-poster" style="background:linear-gradient(135deg,#0d0d2e,#1a1a60)">
+        ⭐
+      </div>
+      <div class="featured-poster" style="background:linear-gradient(135deg,#1a0030,#4a0080)">
+        🌌
+      </div>
+      <div class="featured-poster" style="background:linear-gradient(135deg,#001a30,#003860)">
+        🚀
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ════════════════════════════════════════ -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <span class="logo">CINE<span style="-webkit-text-fill-color:#fff;color:#fff">VERSE</span></span>
+      <p>The world's most immersive 3D streaming platform. Movies, live events, and exclusive premieres — all in one place.</p>
+    </div>
+    <div class="footer-col">
+      <h4>CONTENT</h4>
+      <ul>
+        <li><a href="#">Movies</a></li>
+        <li><a href="#">Live Shows</a></li>
+        <li><a href="#">Originals</a></li>
+        <li><a href="#">New Releases</a></li>
+        <li><a href="#">Top Rated</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>COMPANY</h4>
+      <ul>
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Careers</a></li>
+        <li><a href="#">Press</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>SUPPORT</h4>
+      <ul>
+        <li><a href="#">Help Center</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Use</a></li>
+        <li><a href="#">Cookie Settings</a></li>
+        <li><a href="#">Accessibility</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2024 CineVerse 3D. All rights reserved.</span>
+    <div class="social-links">
+      <a class="social-btn" href="#">𝕏</a>
+      <a class="social-btn" href="#">f</a>
+      <a class="social-btn" href="#">in</a>
+      <a class="social-btn" href="#">▶</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ JAVASCRIPT ═════════════════════════════════════ -->
+<script>
+/* ─── THREE.JS PARTICLE BACKGROUND ───────────────── */
+const canvas = document.getElementById('bg-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 30;
+
+// Stars
+const starGeo = new THREE.BufferGeometry();
+const starCount = 2000;
+const positions = new Float32Array(starCount * 3);
+const colors    = new Float32Array(starCount * 3);
+
+for (let i = 0; i < starCount; i++) {
+  positions[i * 3]     = (Math.random() - .5) * 200;
+  positions[i * 3 + 1] = (Math.random() - .5) * 200;
+  positions[i * 3 + 2] = (Math.random() - .5) * 200;
+  const r = Math.random();
+  if (r < .33) { colors[i*3]=1;  colors[i*3+1]=.8; colors[i*3+2]=.2; }   // gold
+  else if(r<.66){ colors[i*3]=.9;colors[i*3+1]=.1;  colors[i*3+2]=.1; }  // red
+  else          { colors[i*3]=.8; colors[i*3+1]=.8; colors[i*3+2]=1; }    // white
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+starGeo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+
+const starMat = new THREE.PointsMaterial({
+  size: .35, vertexColors: true, transparent: true, opacity: .85
+});
+const stars = new THREE.Points(starGeo, starMat);
+scene.add(stars);
+
+// Floating geometry
+const geos = [
+  new THREE.OctahedronGeometry(1.5),
+  new THREE.TetrahedronGeometry(1.2),
+  new THREE.IcosahedronGeometry(1.0)
+];
+const meshes = [];
+geos.forEach((geo, i) => {
+  const mat = new THREE.MeshBasicMaterial({
+    color: [0xf5c518, 0xe50914, 0x4444ff][i],
+    wireframe: true,
+    transparent: true,
+    opacity: .15
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(
+    (Math.random() - .5) * 40,
+    (Math.random() - .5) * 20,
+    (Math.random() - .5) * 10 - 5
+  );
+  scene.add(mesh);
+  meshes.push(mesh);
+});
+
+// Mouse parallax
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = (e.clientX / window.innerWidth  - .5) * 2;
+  mouseY = (e.clientY / window.innerHeight - .5) * 2;
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Animate
+let t = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  t += 0.005;
+  stars.rotation.y = t * 0.05 + mouseX * 0.1;
+  stars.rotation.x = mouseY * 0.05;
+  meshes.forEach((m, i) => {
+    m.rotation.x = t + i;
+    m.rotation.y = t * 1.3 + i;
+    m.position.y += Math.sin(t + i) * 0.002;
+  });
+  camera.position.x += (mouseX * 2 - camera.position.x) * 0.02;
+  camera.position.y += (-mouseY * 2 - camera.position.y) * 0.02;
+  renderer.render(scene, camera);
+}
+animate();
+
+/* ─── SCROLL REVEAL ────────────────────────────── */
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.15 });
+revealEls.forEach(el => io.observe(el));
+
+/* ─── MODAL ─────────────────────────────────────── */
+function openModal(emoji, title, desc) {
+  document.getElementById('modal-emoji').textContent = emoji;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-desc').textContent  = desc;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+/* ─── NAV SCROLL EFFECT ─────────────────────────── */
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  nav.style.background = window.scrollY > 60
+    ? 'rgba(5,5,10,0.95)' : 'rgba(10,10,15,0.75)';
+});
+
+/* ─── SEARCH ─────────────────────────────────────── */
+document.querySelector('.search-btn').addEventListener('click', () => {
+  const q = document.querySelector('.search-input').value.trim();
+  if (q) openModal('🔍', `Searching: "${q}"`, `Finding the best results for "${q}" in our library of 10,000+ titles...`);
+  else   openModal('🔍', 'Search CineVerse', 'Type a movie name, actor, genre or keyword to search our full library.');
+});
+document.querySelector('.search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.querySelector('.search-btn').click();
+});
+
+/* ─── 3D TILT on cat-cards ───────────────────────── */
+document.querySelectorAll('.cat-card, .live-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width  - .5;
+    const y = (e.clientY - r.top)  / r.height - .5;
+    card.style.transform = `perspective(600px) rotateY(${x*20}deg) rotateX(${-y*20}deg) translateY(-10px)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+</script>
+</body>
+</html>
