@@ -1,4 +1,3 @@
-# cineverse1
 # 🎬 CineVerse - 3D Movie & Live TV Streaming Website
 
 A creative 3D movie streaming website with Live TV, built with HTML/CSS/JavaScript + Node.js
