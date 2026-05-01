@@ -1,22 +1,22 @@
 // ==========================================
-// CINEVERSE - TMDB API INTEGRATION
+// CINEVERSE - API INTEGRATION (BACKEND PROXY)
 // ==========================================
 
 class MovieAPI {
   constructor() {
-    this.base = CONFIG.TMDB_BASE_URL;
-    this.key = CONFIG.TMDB_API_KEY;
+    this.base = '/api';  // Use backend proxy instead of direct TMDB
     this.imgBase = CONFIG.TMDB_IMAGE_BASE;
   }
 
   async fetch(endpoint, params = {}) {
-    const url = new URL(`${this.base}${endpoint}`);
-    url.searchParams.append('api_key', this.key);
-    url.searchParams.append('language', 'en-US');
-    Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
-
     try {
-      const res = await fetch(url.toString());
+      let url = `${this.base}${endpoint}`;
+      
+      // Add query parameters
+      const queryString = new URLSearchParams(params).toString();
+      if (queryString) url += `?${queryString}`;
+      
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`API Error: ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -27,31 +27,31 @@ class MovieAPI {
 
   // Movies
   async getTrending(page = 1) {
-    return this.fetch('/trending/movie/week', { page });
+    return this.fetch('/trending', { page });
   }
   async getPopularMovies(page = 1) {
-    return this.fetch('/movie/popular', { page });
+    return this.fetch('/movies/popular', { page });
   }
   async getTopRatedMovies(page = 1) {
-    return this.fetch('/movie/top_rated', { page });
+    return this.fetch('/movies/top-rated', { page });
   }
   async getUpcomingMovies(page = 1) {
-    return this.fetch('/movie/upcoming', { page });
+    return this.fetch('/movies/upcoming');
   }
   async getNowPlayingMovies(page = 1) {
-    return this.fetch('/movie/now_playing', { page });
+    return this.fetch('/movies/now_playing', { page });
   }
   async getMovieDetails(id) {
-    return this.fetch(`/movie/${id}`, { append_to_response: 'videos,credits,similar,recommendations' });
+    return this.fetch(`/movies/${id}`);
   }
   async getMovieVideos(id) {
-    return this.fetch(`/movie/${id}/videos`);
+    return this.fetch(`/movies/${id}`);  // Backend returns videos in append_to_response
   }
   async searchMovies(query, page = 1) {
-    return this.fetch('/search/multi', { query, page });
+    return this.fetch('/search', { q: query, page });
   }
   async getMoviesByGenre(genreId, page = 1) {
-    return this.fetch('/discover/movie', { with_genres: genreId, page, sort_by: 'popularity.desc' });
+    return this.fetch('/discover', { genre: genreId, page });
   }
 
   // TV Shows
@@ -65,10 +65,10 @@ class MovieAPI {
     return this.fetch('/tv/on_the_air', { page });
   }
   async getTVDetails(id) {
-    return this.fetch(`/tv/${id}`, { append_to_response: 'videos,credits,similar' });
+    return this.fetch(`/tv/${id}`);
   }
   async getTVVideos(id) {
-    return this.fetch(`/tv/${id}/videos`);
+    return this.fetch(`/tv/${id}`);  // Backend returns videos in append_to_response
   }
 
   // Images
