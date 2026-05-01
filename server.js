@@ -15,7 +15,9 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
 // ===== MIDDLEWARE =====
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..'))); // Serve frontend
+
+// Serve static files from the same directory (for Vercel)
+app.use(express.static(__dirname));
 
 // ===== TMDB PROXY (hide API key) =====
 async function tmdbFetch(endpoint, params = {}) {
@@ -118,7 +120,7 @@ app.get('/api/health', (req, res) => {
 
 // ===== SERVE FRONTEND =====
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
