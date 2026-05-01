@@ -31,7 +31,7 @@ const CONFIG = {
 
   // Live TV Channels (demo - replace with real stream URLs)
   LIVE_CHANNELS: [
-    { id: 1, name: 'BBC News', program: 'World News Tonight', viewers: '1.2M', emoji: '🇬🇧', streamUrl: 'https://www.youtube.com/embed/live_stream?channel=UCCjyq_K1Pd2HkXdmHy-MHqQ', color: '#e50914' },
+    { id: 1, name: 'BBC News', program: 'World News Tonight', viewers: '1.2M', emoji: '🇬🇧', streamUrl: 'https://www.youtube.com/embed/live_stream?channel=UCCjyq_K1Pd2HkXdmHy-MHqQ', color: '#cc0000' },
     { id: 2, name: 'CNN', program: 'Breaking News', viewers: '890K', emoji: '📺', streamUrl: 'https://www.youtube.com/embed/live_stream?channel=UCupvZG-5ko_eiXAupbDfxWw', color: '#cc0000' },
     { id: 3, name: 'ESPN', program: 'SportsCenter', viewers: '2.1M', emoji: '⚽', streamUrl: '#', color: '#e05c00' },
     { id: 4, name: 'Discovery', program: 'Wild Planet', viewers: '650K', emoji: '🌍', streamUrl: '#', color: '#0066cc' },
