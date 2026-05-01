@@ -15,9 +15,7 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
 // ===== MIDDLEWARE =====
 app.use(cors());
 app.use(express.json());
-
-// Serve static files from the same directory (for Vercel)
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname)));
 
 // ===== TMDB PROXY (hide API key) =====
 async function tmdbFetch(endpoint, params = {}) {
